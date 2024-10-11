@@ -58,20 +58,18 @@ def split_waypoint(waypoint):
     return output
 
 
-def get_location(token, system, waypoint):
+def get_location(system, waypoint):
     endpoint = f'systems/{system}/waypoints/{waypoint}'
 
     
     return  make_request(endpoint)
 
 
-def get_agent(token):
+def get_agent():
     endpoint = 'my/agent'
 
-    headers = {'Authorization': f'Bearer {token}'}
-
-
     r = make_request(endpoint, headers=headers)
+
     if 'error' in r:
         register_agent(FACTION,PATH_STR)
         r = make_request(endpoint, headers=headers)
@@ -79,14 +77,13 @@ def get_agent(token):
     return r 
 
 
-def view_contracts(token):
+def view_contracts():
     endpoint = 'my/contracts'
-    headers = {'Authorization': f'Bearer {token}'}
     
     return make_request(endpoint, headers=headers)['data']
 
 
-def get_all_shipyards(token,waypoint): 
+def get_all_shipyards(waypoint): 
 
     swp = split_waypoint(waypoint)
 
@@ -96,7 +93,7 @@ def get_all_shipyards(token,waypoint):
     return  make_request(endpoint,params=params)
 
 
-def view_ships(token,shipyard):
+def view_ships(shipyard):
 
     endpoint = f'systems/{shipyard["systemSymbol"]}/waypoints/{shipyard["symbol"]}/shipyard'
 
@@ -104,9 +101,8 @@ def view_ships(token,shipyard):
     return make_request(endpoint)
 
 
-def purchase_ship(token,shipType,waypoint):
+def purchase_ship(shipType,waypoint):
     endpoint = 'my/ships' 
-    headers = {'Authorization': f'Bearer {token}'}
     
     data = {
             'shipType': shipType,
@@ -131,23 +127,21 @@ def purchase_shipui(token,waypoint):
 
 
 
-## worflow = find shipyard based on existing system, via waypoint use view_ships, user input to define what type of ship using purchase_ship. Construct purchase_shipui, use as wrapper for previous 3 functions to streamline this process.  
 
 
-def accept_contract(token, contractid):
+def accept_contract(contractid):
     endpoint = f'my/contracts/{contractid}/accept'
-    headers = {'Authorization': f'Bearer {token}'}
     
 
     return make_request(endpoint, headers=headers, post=True)
 
-def find_shipyard(token,waypoint,):
+def find_shipyard(waypoint):
     shipyards  = get_all_shipyards(token,waypoint)['data']
     choice = user_choice(shipyards,'symbol')
     return choice
 
 
-def find_ship(token,shipyard): 
+def find_ship(shipyard): 
 
     ships  = view_ships(token,shipyard)['data']['shipTypes']
     choice = user_choice(ships,'type')
@@ -163,7 +157,6 @@ def user_choice(func_var,index_var):
             return func_var[int(input_var)-1]
         if type(input_var)!= int:
             print("pick a number dillhole")
-##  Goals weeek of 9/16: create seperate funtion to abstract above 2 functions. Goal is to achieve same output with user choosing shipyard and ship all housed under one "choice" function.
 
 def main():
 
