@@ -6,12 +6,18 @@ FACTION = "COSMIC"
 
 PATH_STR = '~/.config/spacetraders/token'
 
-def make_request (endpoint, params=None, headers=None, data=None, post=False):
+def make_request (endpoint, params=None, headers=dict(), data=dict(), post=False):
     base_url = 'https://api.spacetraders.io/v2'
 
-
     url = os.path.join(base_url, endpoint)
+
+    if endpoint.startswith('my'):
+        headers.update({'Authorization': f'Bearer {get_token(PATH_STR)}'})
+        
+        
+
     if post:
+        headers.update({'Content-Type': 'application/json'})
         r = requests.post(url, params=params, headers=headers, data=json.dumps(data))
     else:
         r = requests.get(url, params=params, headers=headers)
@@ -20,13 +26,12 @@ def make_request (endpoint, params=None, headers=None, data=None, post=False):
 
 def register_agent(faction, path_str):
     endpoint = 'register'
-    headers = {'Content-Type': 'application/json'}
     while True:
         symbol = input("please input symbol!\n")
         data = {'symbol': symbol, 'faction': faction}
 
 
-        r = make_request(endpoint,headers=headers,data=data,post=True)
+        r = make_request(endpoint,data=data,post=True)
 
         if 'error' not in r:
             break
@@ -55,10 +60,9 @@ def split_waypoint(waypoint):
 
 def get_location(token, system, waypoint):
     endpoint = f'systems/{system}/waypoints/{waypoint}'
-    headers = {'Authorization': f'Bearer {token}'}
 
     
-    return  make_request(endpoint,headers=headers)
+    return  make_request(endpoint)
 
 
 def get_agent(token):
@@ -87,19 +91,17 @@ def get_all_shipyards(token,waypoint):
     swp = split_waypoint(waypoint)
 
     endpoint = f'systems/{swp["system"]}/waypoints'
-    headers = {'Authorization': f'Bearer {token}'}
     params = {'traits': 'SHIPYARD'}
     
-    return  make_request(endpoint,headers=headers,params=params)
+    return  make_request(endpoint,params=params)
 
 
 def view_ships(token,shipyard):
 
     endpoint = f'systems/{shipyard["systemSymbol"]}/waypoints/{shipyard["symbol"]}/shipyard'
-    headers = {'Authorization': f'Bearer {token}'}
 
 
-    return make_request(endpoint, headers=headers)
+    return make_request(endpoint)
 
 
 def purchase_ship(token,shipType,waypoint):
@@ -150,14 +152,6 @@ def find_ship(token,shipyard):
     ships  = view_ships(token,shipyard)['data']['shipTypes']
     choice = user_choice(ships,'type')
     return choice
-    # while True:
-        # for i, shiptype in enumerate(view,1):
-            # print (i,shiptype['type'])
-        # shipchoice = input("Pleae choose number!")
-        # if shipchoice.isdigit():
-            # return view[int(shipchoice)-1]
-        # if type(shipchoice)!= int:
-            # print("pick a number dillhole")
 
 
 def user_choice(func_var,index_var):
