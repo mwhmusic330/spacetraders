@@ -6,11 +6,12 @@ FACTION = "COSMIC"
 
 PATH_STR = '~/.config/spacetraders/token'
 
-def make_request (endpoint, params=None, headers=dict(), data=dict(), post=False):
+def make_request (endpoint, params=None, headers=None, data=dict(), post=False):
     base_url = 'https://api.spacetraders.io/v2'
 
     url = os.path.join(base_url, endpoint)
-
+    if headers is None:
+        headers=dict()
     if endpoint.startswith('my'):
         headers.update({'Authorization': f'Bearer {get_token(PATH_STR)}'})
         
@@ -27,7 +28,7 @@ def make_request (endpoint, params=None, headers=dict(), data=dict(), post=False
 def register_agent(faction, path_str):
     endpoint = 'register'
     while True:
-        symbol = input("please input symbol!\n")
+        symbol = input("please input symbol! Registering new agent!\n")
         data = {'symbol': symbol, 'faction': faction}
 
 
@@ -35,6 +36,8 @@ def register_agent(faction, path_str):
 
         if 'error' not in r:
             break
+        print(r)
+
     token_path = os.path.expanduser(path_str)
     with open (token_path, 'w') as file: 
         file.write (r['data']['token'])
@@ -68,11 +71,11 @@ def get_location(system, waypoint):
 def get_agent():
     endpoint = 'my/agent'
 
-    r = make_request(endpoint, headers=headers)
+    r = make_request(endpoint)
 
     if 'error' in r:
         register_agent(FACTION,PATH_STR)
-        r = make_request(endpoint, headers=headers)
+        r = make_request(endpoint)
 
     return r 
 
@@ -81,6 +84,16 @@ def view_contracts():
     endpoint = 'my/contracts'
     
     return make_request(endpoint, headers=headers)['data']
+
+
+def find_e_asteroid(waypoint): 
+
+    swp = split_waypoint(waypoint)
+
+    endpoint = f'systems/{swp["system"]}/waypoints'
+    params = {'type': 'ENGINEERED_ASTEROID'}
+    
+    return  make_request(endpoint,params=params)
 
 
 def get_all_shipyards(waypoint): 
@@ -101,32 +114,24 @@ def view_ships(shipyard):
     return make_request(endpoint)
 
 
-def purchase_ship(shipType,waypoint):
+def purchase_ship(choicelocation,choiceship):
     endpoint = 'my/ships' 
     
     data = {
-            'shipType': shipType,
-            'waypointSymbol': waypoint
+            'shipType': choiceship,
+            'waypointSymbol': choicelocation
             }
 
 
-    return make_request(endpoint, headers=headers, data=data, post=True)
+    ## return make_request(endpoint, data=data, post=True)
+    print (data)
 
+def purchase_shipui(waypoint):
+    shipyard  = find_shipyard(waypoint)
+    ship = find_ship(shipyard)
+    purchase = purchase_ship (shipyard['symbol'],ship['type'])
 
-def purchase_shipui(token,waypoint):
-    find = find_shipyard(token,waypoint)  
-    view = view_ships(token,find)
-    print(view)
-    return
-    purchase = purchase_ship (token,shipType,waypoint)
-
-
-   ## return make_request(endpoint, headers=headers, data=data, params=params, post=True)
-
-
-
-
-
+    return purchase
 
 
 def accept_contract(contractid):
@@ -136,16 +141,16 @@ def accept_contract(contractid):
     return make_request(endpoint, headers=headers, post=True)
 
 def find_shipyard(waypoint):
-    shipyards  = get_all_shipyards(token,waypoint)['data']
-    choice = user_choice(shipyards,'symbol')
-    return choice
+    shipyards  = get_all_shipyards(waypoint)['data']
+    choicelocation = user_choice(shipyards,'symbol')
+    return choicelocation
 
 
-def find_ship(shipyard): 
+def find_ship(choicelocation): 
 
-    ships  = view_ships(token,shipyard)['data']['shipTypes']
-    choice = user_choice(ships,'type')
-    return choice
+    ships  = view_ships(choicelocation)['data']['shipTypes']
+    choiceship = user_choice(ships,'type')
+    return choiceship
 
 
 def user_choice(func_var,index_var):
@@ -160,18 +165,11 @@ def user_choice(func_var,index_var):
 
 def main():
 
-    token = get_token(PATH_STR)
-    agent = get_agent(token)
+    agent = get_agent()
     waypoint = agent['data']['headquarters']
 
-    shipyard = find_shipyard(token,waypoint)
-    # print (testfind)
-    findship = find_ship(token,shipyard)
-    print (findship)
-    ##  shipui = purchase_shipui(token,waypoint)
-    ## request = make_request("factions")
-    ## print(request)
-
+    easteroid = find_e_asteroid(waypoint)
+    print (easteroid)
 if __name__ == '__main__':
     main()
     
